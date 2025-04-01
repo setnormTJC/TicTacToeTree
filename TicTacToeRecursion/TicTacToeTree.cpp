@@ -30,7 +30,7 @@ auto printBoardRow(const std::vector<TTTgameboard>& boards, const int offset)
 }
 
 /* Generate level one children boards where 'X' will be placed at different positions */
-std::vector<TTTgameboard> getLevelOneChildrenBoards(const TTTgameboard& parentBoard)
+std::vector<TTTgameboard> getChildrenBoards(const TTTgameboard& parentBoard)
 {
     constexpr int numberOfChildren = 9;
     std::vector<TTTgameboard> levelOneChildrenBoards(numberOfChildren);
@@ -65,7 +65,7 @@ void demoTreeOfDepthOne()
     constexpr int roughlyTerminalWidth = 90;
     printBoardRow({ emptyStartingBoard }, roughlyTerminalWidth / 2); // Roughly center the parent (root)
 
-    auto levelOneChildrenBoards = getLevelOneChildrenBoards(emptyStartingBoard);
+    auto levelOneChildrenBoards = getChildrenBoards(emptyStartingBoard);
 
     // Print all child boards in a single row
     constexpr int spaceBetweenBoards = 6;  //will need to play with this depending on terminal settings...
@@ -81,6 +81,29 @@ struct GameTreeNode
     std::vector<std::unique_ptr<GameTreeNode>> childrenBoardLinks;
 };
 
+
+void generateGameTree(std::unique_ptr<GameTreeNode>& node, const int currentDepth, const int maxDepth)
+{
+    // Base case: stop recursion if we reached the maximum depth
+    if (currentDepth >= maxDepth) return;
+
+    // Generate children for this node (game board)
+    auto children = getChildrenBoards(node->currentGameBoard);
+
+    for (const auto& childBoard : children)
+    {
+        // Create a new node for each child
+        auto pChildNode = std::make_unique<GameTreeNode>();
+        pChildNode->currentGameBoard = childBoard;
+
+        // Recursively generate the children for the next depth level
+        generateGameTree(pChildNode, currentDepth + 1, maxDepth);
+
+        // Add the child node to the current node's children
+        node->childrenBoardLinks.push_back(std::move(pChildNode));
+    }
+}
+
 int main()
 {
     /* The empty starting board: */
@@ -94,31 +117,34 @@ int main()
     auto pRoot = std::make_unique<GameTreeNode>();
     pRoot->currentGameBoard = emptyStartingBoard;
 
-    printBoardRow({ emptyStartingBoard }, 40); //print the starting board 
+    //printBoardRow({ emptyStartingBoard }, 40); //print the starting board 
 
 
-    auto levelOneChildren = getLevelOneChildrenBoards(emptyStartingBoard);
-    std::cout << "\n\n\n";
-    printBoardRow(levelOneChildren, 6); //prints all of the possible first moves 
+    //auto levelOneChildren = getLevelOneChildrenBoards(emptyStartingBoard);
+    //std::cout << "\n\n\n";
+    //printBoardRow(levelOneChildren, 6); //prints all of the possible first moves 
 
 
-    /*Insert children into the tree*/
-    for (const auto& levelOneChild : levelOneChildren)
-    {
-        auto pLevelOneChild = std::make_unique<GameTreeNode>();
-        pLevelOneChild->currentGameBoard = levelOneChild;
+    ///*Insert children into the tree*/
+    //for (const auto& levelOneChild : levelOneChildren)
+    //{
+    //    auto pLevelOneChild = std::make_unique<GameTreeNode>();
+    //    pLevelOneChild->currentGameBoard = levelOneChild;
 
-        pRoot->childrenBoardLinks.push_back(std::move(pLevelOneChild));
-    }
+    //    pRoot->childrenBoardLinks.push_back(std::move(pLevelOneChild));
+    //}
 
-    std::cout << "\n\nEnter the child number you want to see: \n";
-    int desiredChildNumber; 
-    std::cin >> desiredChildNumber; 
+    //std::cout << "\n\nEnter the child number you want to see: \n";
+    //int desiredChildNumber; 
+    //std::cin >> desiredChildNumber; 
 
-    auto desiredChildBoard = pRoot->childrenBoardLinks.at(desiredChildNumber).get()->currentGameBoard; 
+    //auto desiredChildBoard = pRoot->childrenBoardLinks.at(desiredChildNumber).get()->currentGameBoard; 
 
-    std::cout << "\n\n";
-    printBoardRow({ desiredChildBoard }, 0);
+    //std::cout << "\n\n";
+    //printBoardRow({ desiredChildBoard }, 0);
+
+    constexpr int desiredDepth = 6; 
+    generateGameTree(pRoot, 0, desiredDepth); 
 
     return 0;
 }
